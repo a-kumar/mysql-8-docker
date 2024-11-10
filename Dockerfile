@@ -12,7 +12,7 @@ RUN set -eux; \
 
 # add gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION 1.17
+ENV GOSU_VERSION=1.17
 RUN set -eux; \
 # TODO find a better userspace architecture detection method than querying the kernel
 	arch="$(uname -m)"; \
@@ -55,9 +55,12 @@ RUN set -eux; \
 	gpg --batch --export --armor "$key" > /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql; \
 	rm -rf "$GNUPGHOME"
 
-ENV MYSQL_MAJOR 8.4
-ENV MYSQL_VERSION 8.4.3-1.el9
-
+ENV MYSQL_MAJOR=8.4
+ENV MYSQL_VERSION=8.4.3-1.el9
+ENV MYSQL_ROOT_PASSWORD=root
+# ENV MYSQL_ROOT_HOST=mysql-8-docker
+# ENV MYSQL_USER=drupal
+# ENV MYSQL_PASSWORD=drupal
 RUN set -eu; \
 	{ \
 		echo '[mysql8.4-server-minimal]'; \
@@ -107,16 +110,18 @@ RUN set -eu; \
 # https://github.com/docker-library/mysql/pull/680#issuecomment-825930524
 		echo 'module_hotfixes=true'; \
 	} | tee /etc/yum.repos.d/mysql-community-tools.repo
-ENV MYSQL_SHELL_VERSION 8.4.3-1.el9
+ENV MYSQL_SHELL_VERSION=8.4.3-1.el9
 RUN set -eux; \
 	microdnf install -y "mysql-shell-$MYSQL_SHELL_VERSION"; \
 	microdnf clean all; \
 	\
 	mysqlsh --version
 
-VOLUME /var/lib/mysql
+#VOLUME /var/lib/mysql
+VOLUME ./mysql-datadir:/var/lib/mysql
 
 COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 3306 33060
